@@ -6,7 +6,7 @@ subprojects { project ->
 
     apply plugin: 'com.github.dcendents.android-maven'
 
-    group = 'com.github.libern'
+    group = 'com.github.easilycoder'
 
 
 }
