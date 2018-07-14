@@ -39,7 +39,7 @@ public class FrescoImageProvider implements CacheProvider {
         return SingleTonHolder.INSTANCE;
     }
 
-    private FrescoCacheKeyProvider cachKeyProvider;
+    private FrescoCacheKeyProvider cacheKeyProvider;
 
     private FrescoImageProvider() {
     }
@@ -64,6 +64,48 @@ public class FrescoImageProvider implements CacheProvider {
         }
         boolean isAdded = false;
         if (cacheFile != null && cacheFile.exists()) {
+            isAdded = addFileToLocalCache(key, cacheFile);
+        }
+        if (isAdded) {
+            listener.onFinished();
+            return;
+        }
+        prefetchToDiskCache(key, new ImageRequestListener() {
+
+            @Override
+            public void onStart(ImageRequest request) {
+            }
+
+            @Override
+            public void onSuccess(ImageRequest request) {
+                if (listener != null) {
+                    listener.onFinished();
+                }
+            }
+
+            @Override
+            public void onFailed(ImageRequest request, Throwable throwable) {
+                if (listener != null) {
+                    listener.onFinished();
+                }
+            }
+
+            @Override
+            public void onCancel(String requestId) {
+                if (listener != null) {
+                    listener.onFinished();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void put(String key, InputStream cacheFile, final CacheLoadFinishListener listener) {
+        if (TextUtils.isEmpty(key)) {
+            return;
+        }
+        boolean isAdded = false;
+        if (cacheFile != null) {
             isAdded = addFileToLocalCache(key, cacheFile);
         }
         if (isAdded) {
@@ -125,6 +167,27 @@ public class FrescoImageProvider implements CacheProvider {
         }
     }
 
+    private boolean addFileToLocalCache(String requestUrl, InputStream inputStream) {
+        CacheKey remoteUrlCacheKey = getCacheKey(requestUrl);
+        InputStream localFileInputStream = null;
+        try {
+            localFileInputStream = inputStream;
+            BinaryResource resource = Fresco.getImagePipelineFactory().getMainFileCache().insert(remoteUrlCacheKey, WriterCallbacks.from(localFileInputStream));
+            return resource != null && resource.size() > 0;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (localFileInputStream != null) {
+                    localFileInputStream.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private File getCachedImageOnDisk(String url) {
         CacheKey key = getCacheKey(url);
         if (key == null) {
@@ -163,8 +226,8 @@ public class FrescoImageProvider implements CacheProvider {
     }
 
     private CacheKey getCacheKey(String url) {
-        if (cachKeyProvider == null) {
-            cachKeyProvider = new FrescoCacheKeyProvider() {
+        if (cacheKeyProvider == null) {
+            cacheKeyProvider = new FrescoCacheKeyProvider() {
                 @Override
                 public CacheKey getCacheKey(String url) {
                     if (TextUtils.isEmpty(url)) {
@@ -174,11 +237,11 @@ public class FrescoImageProvider implements CacheProvider {
                 }
             };
         }
-        return cachKeyProvider.getCacheKey(url);
+        return cacheKeyProvider.getCacheKey(url);
     }
 
 
     public void setCachKeyProvider(FrescoCacheKeyProvider cachKeyProvider) {
-        this.cachKeyProvider = cachKeyProvider;
+        this.cacheKeyProvider = cachKeyProvider;
     }
 }

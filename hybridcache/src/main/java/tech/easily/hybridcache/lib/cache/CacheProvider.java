@@ -27,6 +27,15 @@ public interface CacheProvider {
      */
     void put(String key, File value, CacheLoadFinishListener listener);
 
+    /**
+     * write cache with the base key and cache
+     *
+     * @param key      the cache key
+     * @param value    cache file
+     * @param listener when store cache finish,it will be invoked
+     */
+    void put(String key, InputStream value, CacheLoadFinishListener listener);
+
 
     boolean isClosed();
 }

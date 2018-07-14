@@ -79,6 +79,33 @@ public class SimpleCacheProvider implements CacheProvider {
         }
     }
 
+    @Override
+    public void put(String key, InputStream value, CacheLoadFinishListener listener) {
+        if (diskLruCache == null || value == null || TextUtils.isEmpty(key)) {
+            return;
+        }
+        DiskLruCache.Editor editor = null;
+        try {
+            String cacheKey = cacheKeyProvider.buildCacheKey(key);
+            editor = diskLruCache.edit(cacheKey);
+            if (editor != null) {
+                OutputStream os = editor.newOutputStream(0);
+                if (writeCache(value, os) && listener != null) {
+                    listener.onFinished();
+                }
+                editor.commit();
+            }
+            diskLruCache.flush();
+        } catch (IOException e) {
+            try {
+                if (editor != null) {
+                    editor.abort();
+                }
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+        }
+    }
 
     public boolean clear() {
         try {
@@ -111,9 +138,16 @@ public class SimpleCacheProvider implements CacheProvider {
         if (value == null || !value.exists() || outputStream == null) {
             return false;
         }
+        InputStream inputStream = new FileInputStream(value);
+        return writeCache(inputStream, outputStream);
+    }
+
+    private boolean writeCache(InputStream inputStream, OutputStream outputStream) throws IOException {
+        if (inputStream == null || outputStream == null) {
+            return false;
+        }
         byte[] data = new byte[4 * 1024];
         int length;
-        InputStream inputStream = new FileInputStream(value);
         while ((length = inputStream.read(data)) != -1) {
             outputStream.write(data, 0, length);
         }
