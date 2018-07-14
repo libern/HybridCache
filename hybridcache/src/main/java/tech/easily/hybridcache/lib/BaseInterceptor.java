@@ -41,15 +41,15 @@ public abstract class BaseInterceptor implements WebResInterceptor {
         void onError(String requestUrl, int errorCode, String responseMsg);
     }
 
-    private static final String HYBRID_CACHE_ROOT_DIR = "hybrid_cache/";
-    private static final String WEB_CACHE_TEMP_DIR = HYBRID_CACHE_ROOT_DIR + "temp";
-    private static final String RES_TYPE_HTML = "text/html";
-    private static final String CHARSET_ENCODE = "UTF-8";
-    private static final long DEFAULT_CACHE_DISK_SIZE = 10 * 1024 * 1024;
-    private Handler handler = new Handler(Looper.getMainLooper());
-    private CacheProvider cacheProvider;
-    private String tempDir;
-    private OnErrorListener onErrorListener;
+    protected static final String HYBRID_CACHE_ROOT_DIR = "hybrid_cache/";
+    protected static final String WEB_CACHE_TEMP_DIR = HYBRID_CACHE_ROOT_DIR + "temp";
+    protected static final String RES_TYPE_HTML = "text/html";
+    protected static final String CHARSET_ENCODE = "UTF-8";
+    protected static final long DEFAULT_CACHE_DISK_SIZE = 10 * 1024 * 1024;
+    protected Handler handler = new Handler(Looper.getMainLooper());
+    protected CacheProvider cacheProvider;
+    protected String tempDir;
+    protected OnErrorListener onErrorListener;
 
     public BaseInterceptor(@NonNull Context context) {
         this(context, null);
@@ -124,7 +124,7 @@ public abstract class BaseInterceptor implements WebResInterceptor {
 
     }
 
-    private void initDefaultDiskCacheProvider(Context context, String name, long size) {
+    protected void initDefaultDiskCacheProvider(Context context, String name, long size) {
         String path = FileUtils.getLibraryDiskDir(context, name);
         if (TextUtils.isEmpty(path)) {
             return;
@@ -139,7 +139,7 @@ public abstract class BaseInterceptor implements WebResInterceptor {
         }
     }
 
-    private WebResourceResponse buildWebResponse(HttpConnectionDownloader.DownloadResult result) {
+    protected WebResourceResponse buildWebResponse(HttpConnectionDownloader.DownloadResult result) {
         if (result == null) {
             return null;
         }
@@ -154,7 +154,7 @@ public abstract class BaseInterceptor implements WebResInterceptor {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? new WebResourceResponse(result.contentType, result.contentEncoding, result.responseCode, result.responseMsg, result.responseHeaders, result.inputStream) : new WebResourceResponse(result.contentType, "UTF-8", result.inputStream);
     }
 
-    private void dispatchError(final String url, final int code, final String message) {
+    protected void dispatchError(final String url, final int code, final String message) {
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -163,9 +163,9 @@ public abstract class BaseInterceptor implements WebResInterceptor {
         });
     }
 
-    private class TmpFileWriteListener implements TempFileWriter.WriterCallback {
-        private CacheProvider mDiskCache;
-        private String remoteURL;
+    protected class TmpFileWriteListener implements TempFileWriter.WriterCallback {
+        protected CacheProvider mDiskCache;
+        protected String remoteURL;
 
         TmpFileWriteListener(CacheProvider diskCache, String netUrl) {
             this.mDiskCache = diskCache;
